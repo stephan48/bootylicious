@@ -1,4 +1,4 @@
-package Bootylicious::Theme::WordpressTwentyten;
+package Bootylicious::Theme::Wordpresstwentyten;
 
 use strict;
 use warnings;
