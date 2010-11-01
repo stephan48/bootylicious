@@ -8,6 +8,8 @@ use lib "$FindBin::Bin/contrib/mojolicious-plugin-botprotection/lib";
 
 use Mojolicious::Lite;
 
+app->home->parse($ENV{BOOTYLICIOUS_HOME}) if $ENV{BOOTYLICIOUS_HOME};
+
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
 plugin 'booty_config' => {file => app->home->rel_file('bootylicious.conf')};
@@ -79,9 +81,10 @@ post '/articles/:year/:month/:alias/comment' => sub {
     return $self->render('article', article => $article)
       unless $self->validate($validator);
 
-    $article->comment(%{$validator->values});
+    my $comment = $article->comment(%{$validator->values});
 
-    return $self->redirect_to('article');
+    return $self->redirect_to($self->href_to_article($article)
+          ->fragment('comment-' . $comment->number));
 } => 'comment';
 
 get '/comments' => sub {
@@ -239,20 +242,18 @@ __DATA__
         <title><%= config 'title' %></title>
         <link><%= href_to_rss->to_abs %></link>
         <description><%= config 'description' %></description>
-        <pubDate><%= date_rss $articles->first->created %></pubDate>
-        <lastBuildDate><%= date_rss $articles->first->created %></lastBuildDate>
+        <pubDate><%= date_rss $pager->articles->first->created %></pubDate>
         <generator><%= generator %></generator>
         % while (my $article = $pager->articles->next) {
         <item>
           <title><%= $article->title %></title>
-          <author><%= article_author $article %></author>
           <link><%= href_to_article($article)->to_abs %></link>
-          <description>
+          <description><![CDATA[
             <%= render_article_or_preview $article %>
             % if ($article->link) {
                 <%= permalink_to($article->link) if $article->link %>
             % }
-          </description>
+          ]]></description>
           % foreach my $tag (@{$article->tags}) {
           <category><%= $tag %></category>
           % }
@@ -273,16 +274,14 @@ __DATA__
         <link><%= href_to_comments_rss->to_abs %></link>
         <description><%= config 'description' %></description>
         <pubDate><%= date_rss $comments->first->created %></pubDate>
-        <lastBuildDate><%= date_rss $comments->first->created %></lastBuildDate>
         <generator><%= generator %></generator>
         % while (my $comment = $comments->next) {
         <item>
           <title><%= $comment->author %> on <%= $comment->article->title %></title>
-          <author><%= $comment->author %></author>
           <link><%= href_to_comment($comment)->to_abs %></link>
-          <description>
+          <description><![CDATA[
             <%= $comment->content %>
-          </description>
+          ]]></description>
           <pubDate><%= date_rss $comment->created %></pubDate>
           <guid><%= href_to_comment($comment)->to_abs %></guid>
         </item>
@@ -402,22 +401,22 @@ __DATA__
             Please, don't disable them.
             </div>
         </div>
-        %= signed_form_for 'comment', method => 'post' => begin
-        <%= label 'author' => begin %>Name <span class="required">*</span><% end %><br />
-        <%= input 'author' %><br />
+        %= signed_form_for 'comment' => {year => $article->created->year, month => $article->created->month, alias => $article->name}, method => 'post' => begin
+        <label for="author">Name <span class="required">*</span></label><br />
+        <%= input_tag 'author' %><br />
         <%= validator_error 'author' %>
 
-        <%= label 'email' => begin %>E-mail<% end %><br />
-        <%= input 'email' %>
+        <label for="email">E-mail</label><br />
+        <%= input_tag 'email' %>
         <span class="tip"><%= link_to 'http://gravatar.com' => begin %>Gravatar<% end %>-friendly</span>
         <br />
         <%= validator_error 'email' %>
 
-        <%= label 'url' => begin %>Website<% end %><br />
-        <%= input 'url' %><br />
+        <label for="url">Website</label><br />
+        <%= input_tag 'url' %><br />
         <%= validator_error 'url' %>
 
-        <%= label 'content' => begin %>Comment <span class="required">*</span><% end %><br />
+        <label for="content">Comment <span class="required">*</span></label><br />
         <%= text_area 'content' %><br />
         <%= validator_error 'content' %>
 
@@ -462,7 +461,7 @@ __DATA__
         <%= $draft->title %>
     </h1>
     <div class="tags"><%= tags_links $draft %></div>
-    <%== $draft->content %>
+    <%== render_article $draft %>
 </div>
 
 
@@ -490,6 +489,7 @@ __DATA__
         <meta charset="UTF-8">
         <title><%= $title ? "$title / " : '' %><%= config 'title' %></title>
         <link rel="stylesheet" href="/styles.css" type="text/css" />
+        <%= stylesheet '/styles.css' %>
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %>" href="<%= href_to_rss %>" />
         % if (comments_enabled) {
         <link rel="alternate" type="application/rss+xml" title="<%= config 'title' %> Comments" href="<%= href_to_comments_rss %>" />
@@ -529,7 +529,7 @@ a,a:active {color:#555}
 a:hover{color:#000}
 a:visited{color:#000}
 img{border:0px}
-pre{border:2px solid #ccc;background:#eee;padding:2em;overflow:auto;overflow-y:visible;width:600px;}
+pre{line-height:18px;border:2px solid #ccc;background:#eee;padding:1em;overflow:auto;overflow-y:visible;width:600px;}
 #body {width:65%;min-height:100%;height:auto !important;height:100%;margin:0 auto -6em;}
 #header {text-align:center;padding:2em 0em 0.5em 0em;border-bottom: 1px solid #000}
 h1#title{font-size:3em}

@@ -6,13 +6,7 @@ use warnings;
 # Disable epoll, kqueue and IPv6
 BEGIN { $ENV{MOJO_POLL} = $ENV{MOJO_NO_IPV6} = 1 }
 
-use Mojo::IOLoop;
-use Test::More;
-
-# Make sure sockets are working
-plan skip_all => 'working sockets required for this test!'
-  unless Mojo::IOLoop->new->generate_port;
-plan tests => 9;
+use Test::More tests => 9;
 
 # Just once I'd like to eat dinner with a celebrity who isn't bound and
 # gagged.
@@ -20,20 +14,20 @@ use Mojolicious::Lite;
 use Test::Mojo;
 
 # Custom dispatchers /custom
-app->plugins->add_hook(
+app->hook(
     before_dispatch => sub {
-        my ($self, $c) = @_;
-        $c->render_text($c->param('a'), status => 205)
-          if $c->req->url->path eq '/custom';
+        my $self = shift;
+        $self->render_text($self->param('a'), status => 205)
+          if $self->req->url->path eq '/custom';
     }
 );
 
 # Custom dispatcher /custom_too
-app->plugins->add_hook(
+app->hook(
     after_static_dispatch => sub {
-        my ($self, $c) = @_;
-        $c->render_text('this works too')
-          if $c->req->url->path eq '/custom_too';
+        my $self = shift;
+        $self->render_text('this works too')
+          if $self->req->url->path eq '/custom_too';
     }
 );
 

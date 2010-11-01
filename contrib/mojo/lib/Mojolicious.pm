@@ -35,10 +35,12 @@ __PACKAGE__->attr(static  => sub { MojoX::Dispatcher::Static->new });
 __PACKAGE__->attr(types   => sub { MojoX::Types->new });
 
 our $CODENAME = 'Hot Beverage';
-our $VERSION  = '0.999931';
+our $VERSION  = '0.999932';
 
 our $AUTOLOAD;
 
+# These old doomsday devices are dangerously unstable.
+# I'll rest easier not knowing where they are.
 sub AUTOLOAD {
     my $self = shift;
 
@@ -79,7 +81,7 @@ sub new {
             my $tx = Mojo::Transaction::HTTP->new;
 
             # Hook
-            $self->plugins->run_hook(after_build_tx => $tx);
+            $self->plugins->run_hook(after_build_tx => ($tx, $self));
 
             return $tx;
         }
@@ -93,7 +95,6 @@ sub new {
 
     # Renderer
     my $renderer = $self->renderer;
-    $renderer->default_handler('ep');
 
     # Static
     my $static = $self->static;
@@ -146,6 +147,8 @@ sub new {
     return $self;
 }
 
+# Amy, technology isn't intrinsically good or evil. It's how it's used.
+# Like the Death Ray.
 sub defaults {
     my $self = shift;
 
@@ -240,6 +243,11 @@ sub handler {
 }
 
 sub helper { shift->renderer->add_helper(@_) }
+
+sub hook {
+    my ($self, $name, $cb) = @_;
+    $self->plugins->add_hook($name, sub { shift; $cb->(@_) });
+}
 
 sub plugin {
     my $self = shift;
@@ -585,6 +593,59 @@ Note that this method is EXPERIMENTAL and might change without warning!
 
     # Template
     <%= add 2, 3 %>
+
+=head2 C<hook>
+
+    $app->hook(after_dispatch => sub { ... });
+
+Add hooks to named events.
+Note that this method is EXPERIMENTAL and might change without warning!
+
+The following events are available and run in the listed order.
+
+=over 4
+
+=item after_build_tx
+
+Runs right after the transaction is built and before the HTTP request gets
+parsed.
+One use case would be upload progress bars.
+(Passed the transaction and application instances)
+
+    $app->hook(before_request => sub {
+        my ($tx, $app) = @_;
+    });
+
+=item before_dispatch
+
+Runs before the dispatchers determines what action to run.
+(Passed the default controller instance)
+
+    $app->hook(before_dispatch => sub {
+        my $self = shift;
+    });
+
+=item after_static_dispatch
+
+Runs after the static dispatcher determines if a static file should be
+served. (Passed the default controller instance)
+Note that the callbacks of this hook run in reverse order.
+
+    $app->hook(after_static_dispatch => sub {
+        my $self = shift;
+    });
+
+=item after_dispatch
+
+Runs after the dispatchers determines what action to run.
+(Passed the current controller instance)
+Note that the callbacks of this hook run in reverse order.
+
+    $app->hook(after_dispatch => sub {
+        my $self = shift;
+    });
+
+=back
 
 =head2 C<plugin>
 
