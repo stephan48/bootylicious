@@ -11,6 +11,8 @@ require Time::Piece;
 __PACKAGE__->attr('epoch');
 
 my $TIMESTAMP_RE = qr/(\d\d\d\d)(\d?\d)(\d?\d)(?:T(\d\d):?(\d\d):?(\d\d))?/;
+my @DAYS         = qw/Sun Mon Tue Wed Thu Fri Sat/;
+my @MONTHS       = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
 
 sub new {
     my $self   = shift->SUPER::new;
@@ -82,6 +84,19 @@ sub is_timestamp {
     my $timestamp = shift;
 
     return $timestamp =~ qr/^$TIMESTAMP_RE$/ ? 1 : 0;
+}
+
+sub to_string {
+    my $self = shift;
+
+    my ($second, $minute, $hour, $mday, $month, $year, $wday) =
+      gmtime $self->epoch;
+
+    return sprintf(
+        "%s, %02d %s %04d %02d:%02d:%02d GMT",
+        $DAYS[$wday], $mday, $MONTHS[$month], $year + 1900,
+        $hour, $minute, $second
+    );
 }
 
 1;

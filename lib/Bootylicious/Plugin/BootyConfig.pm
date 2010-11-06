@@ -14,6 +14,10 @@ sub register {
 
     $conf ||= {};
 
+    my $booty = $conf->{booty};
+
+    $app->helper(booty => sub {$booty});
+
     $app->log->level('error');
 
     # Default plugins
@@ -31,66 +35,48 @@ sub register {
     );
     $app->plugin('bot_protection');
 
-    $conf->{default} = $self->_default unless exists $conf->{default};
-    my $config = $app->plugin('json_config' => $conf);
-
     $app->secret($conf->{secret});
 
-    # Config access
-    $app->helper(
-        config => sub {
-            my $self = shift;
-
-            if (@_) {
-                return $config->{$_[0]} if @_ == 1;
-
-                $config = {%$config, @_};
-            }
-
-            return $config;
-        }
-    );
-
     # Set appropriate log level
-    $app->log->level($config->{loglevel});
+    $app->log->level($conf->{loglevel} || 'debug');
 
     # Additional Perl modules
-    $self->_setup_inc($config->{perl5lib});
+    $self->_setup_inc($conf->{perl5lib});
 
     # CGI hack
-    $ENV{SCRIPT_NAME} = $config->{base} if defined $config->{base};
+    $ENV{SCRIPT_NAME} = $conf->{base} if defined $conf->{base};
 
     # Don't use set locale unless it is explicitly specified via a config file
     $ENV{LC_ALL} = 'C';
 
     # set proper templates base dir, if defined
-    $app->renderer->root($app->home->rel_dir($config->{templates_directory}))
-      if defined $config->{templates_directory};
+    $app->renderer->root($app->home->rel_dir($conf->{templates_directory}))
+      if defined $conf->{templates_directory};
 
     # set proper public base dir, if defined
-    $app->static->root($app->home->rel_dir($config->{public_directory}))
-      if defined $config->{public_directory};
+    $app->static->root($app->home->rel_dir($conf->{public_directory}))
+      if defined $conf->{public_directory};
 
-    $app->defaults(title => '', description => '', layout => 'wrapper');
+    $app->defaults(booty => $booty, title => '', description => '', layout => 'wrapper');
 
     # Parser helpers
-    $app->helper(parsers => sub { $config->{_parsers} });
+    #$app->helper(parsers => sub { $config->{_parsers} });
 
-    $app->helper(
-        add_parser => sub {
-            my $self = shift;
-            my ($ext, $cb) = @_;
+    #$app->helper(
+        #add_parser => sub {
+            #my $self = shift;
+            #my ($ext, $cb) = @_;
 
-            $config->{_parsers}->{$ext} = $cb;
-        }
-    );
+            #$config->{_parsers}->{$ext} = $cb;
+        #}
+    #);
 
     $app->plugin('booty_helpers');
 
-    $c->add_parser(
-        pod => sub { $app->renderer->helper->{pod_to_html}->(undef, @_) });
+    #$c->add_parser(
+        #pod => sub { $app->renderer->helper->{pod_to_html}->(undef, @_) });
 
-    if (my $theme = $config->{theme}) {
+    if (my $theme = $conf->{theme}) {
         my $theme_class = join '::' => 'Bootylicious::Theme',
           Mojo::ByteStream->new($theme)->camelize;
 
@@ -101,7 +87,7 @@ sub register {
     }
 
     # Load additional plugins
-    $self->_load_plugins($app, $config->{plugins});
+    $self->_load_plugins($app, $conf->{plugins});
 }
 
 sub _setup_inc {
@@ -138,60 +124,6 @@ sub _load_plugins {
     foreach my $plugin (@plugins) {
         $app->plugin($plugin->{name} => $plugin->{args});
     }
-}
-
-sub _default {
-    {   author      => 'whoami',
-        email       => '',
-        title       => 'Just another blog',
-        about       => 'Perl hacker',
-        description => 'I do not know if I need this',
-
-        cuttag    => '[cut]',
-        cuttext   => 'Keep reading',
-        pagelimit => 10,
-        datefmt   => '%a, %d %b %Y',
-
-        menu => [
-            index   => '/',
-            tags    => '/tags.html',
-            archive => '/articles.html'
-        ],
-        footer =>
-          'Powered by <a href="http://getbootylicious.org">Bootylicious</a>',
-        theme => '',
-
-        comments_enabled => 1,
-
-        meta => [],
-        css  => [],
-        js   => [],
-
-        strings => {
-            'archive'             => 'Archive',
-            'archive-description' => 'Articles index',
-            'tags'                => 'Tags',
-            'tags-description'    => 'Tags overview',
-            'tag'                 => 'Tag',
-            'tag-description'     => 'Articles with tag [_1]',
-            'draft'               => 'Draft',
-            'permalink-to'        => 'Permalink to',
-            'later'               => 'Later',
-            'earlier'             => 'Earlier',
-            'not-found' => 'The page you are looking for was not found',
-            'error'     => 'Internal error occuried :('
-        },
-        template_handler => 'ep',
-
-        perl5lib => '',
-        loglevel => 'error',
-
-        articles_directory  => 'articles',
-        pages_directory     => 'pages',
-        drafts_directory    => 'drafts',
-        public_directory    => 'public',
-        templates_directory => 'templates',
-    };
 }
 
 1;
