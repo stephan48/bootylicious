@@ -270,7 +270,7 @@ __DATA__
 @@ comments.rss.ep
     % my $comments = booty->get_recent_comments(10);
     <channel>
-        <title><%= booty->config->title %></title>
+        <title><%= booty->config->title %> Comments</title>
         <link><%= booty->url->comments_rss %></link>
         <description><%= booty->config->description %></description>
         <pubDate><%= $comments->first->created->to_string %></pubDate>
