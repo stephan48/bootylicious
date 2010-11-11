@@ -14,7 +14,7 @@ sub register {
 
     $conf ||= {};
 
-    my $booty = $conf->{booty};
+    my $booty = delete $conf->{booty};
 
     $app->helper(booty => sub {$booty});
 
@@ -57,24 +57,14 @@ sub register {
     $app->static->root($app->home->rel_dir($conf->{public_directory}))
       if defined $conf->{public_directory};
 
-    $app->defaults(booty => $booty, title => '', description => '', layout => 'wrapper');
-
-    # Parser helpers
-    #$app->helper(parsers => sub { $config->{_parsers} });
-
-    #$app->helper(
-        #add_parser => sub {
-            #my $self = shift;
-            #my ($ext, $cb) = @_;
-
-            #$config->{_parsers}->{$ext} = $cb;
-        #}
-    #);
+    $app->defaults(
+        booty       => $booty,
+        title       => '',
+        description => '',
+        layout      => 'wrapper'
+    );
 
     $app->plugin('booty_helpers');
-
-    #$c->add_parser(
-        #pod => sub { $app->renderer->helper->{pod_to_html}->(undef, @_) });
 
     if (my $theme = $conf->{theme}) {
         my $theme_class = join '::' => 'Bootylicious::Theme',
@@ -122,6 +112,7 @@ sub _load_plugins {
     }
 
     foreach my $plugin (@plugins) {
+        $app->log->debug('Loading plugin ' . $plugin->{name});
         $app->plugin($plugin->{name} => $plugin->{args});
     }
 }

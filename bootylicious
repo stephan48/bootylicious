@@ -20,7 +20,7 @@ my $config = app->plugin(
 my $booty =
   Bootylicious->new(root => app->home->to_string, config => $config);
 
-plugin 'booty_config' => {booty => $booty};
+plugin 'booty_config' => {%$config, booty => $booty};
 
 my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
 my $TAG_RE   = qr/[a-zA-Z0-9]+/;
@@ -29,7 +29,7 @@ under sub {
     my $self = shift;
 
     $booty->url->base($self->req->url->base->to_abs);
-    $booty->url->path($self->req->url->base->path);
+    $booty->url->prefix($self->req->url->base->path);
 
     return 1;
 };
