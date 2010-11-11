@@ -26,7 +26,7 @@ use Bootylicious::TagCloud;
 use Bootylicious::Config;
 use Bootylicious::Helpers;
 use Bootylicious::Renderer;
-use Bootylicious::Url;
+use Bootylicious::UrlBuilder;
 
 sub new {
     my $class = shift;
@@ -41,7 +41,7 @@ sub new {
     $self->{helpers}
       ||= Bootylicious::Helpers->new(config => $self->{config});
 
-    $self->{url} ||= Bootylicious::Url->new;
+    $self->{url} ||= Bootylicious::UrlBuilder->new;
 
     $self->{renderer} ||= Bootylicious::Renderer->new(
         config  => $self->{config},
@@ -51,7 +51,7 @@ sub new {
     return $self;
 }
 
-sub root   { shift->{root} }
+sub root     { shift->{root} }
 sub config   { shift->{config} }
 sub helpers  { shift->{helpers} }
 sub url      { shift->{url} }

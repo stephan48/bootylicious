@@ -25,6 +25,15 @@ plugin 'booty_config' => {booty => $booty};
 my $ALIAS_RE = qr/[a-zA-Z0-9-_]+/;
 my $TAG_RE   = qr/[a-zA-Z0-9]+/;
 
+under sub {
+    my $self = shift;
+
+    $booty->url->base($self->req->url->base->to_abs);
+    $booty->url->path($self->req->url->base->path);
+
+    return 1;
+};
+
 get '/'      => \&index => 'root';
 get '/index' => \&index => 'index';
 
@@ -238,7 +247,7 @@ __DATA__
         % while (my $article = $pager->articles->next) {
         <item>
           <title><%= $article->title %></title>
-          <link><%= booty->url->article($article) %></link>
+          <link><%= booty->url->article($article)->to_abs %></link>
           <description><![CDATA[
             <%== booty->renderer->render_preview($article) %>
             % if ($article->link) {
@@ -249,10 +258,10 @@ __DATA__
           <category><%= $tag %></category>
           % }
           % if (booty->config->comments_enabled) {
-          <comments><%= booty->url->comments($article) %></comments>
+          <comments><%= booty->url->comments($article)->to_abs %></comments>
           % }
           <pubDate><%= $article->created->to_string %></pubDate>
-          <guid><%= booty->url->article($article) %></guid>
+          <guid><%= booty->url->article($article)->to_abs %></guid>
         </item>
         % }
     </channel>

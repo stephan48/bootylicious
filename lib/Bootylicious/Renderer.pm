@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Pod::Simple::HTML;
-use Bootylicious::Url;
+use Bootylicious::UrlBuilder;
 
 sub new {
     my $class = shift;
@@ -39,7 +39,7 @@ sub new {
     return $self;
 }
 
-sub config { shift->{config} }
+sub config  { shift->{config} }
 sub parsers { shift->{parsers} }
 
 sub render_preview {
@@ -63,7 +63,7 @@ sub render_preview {
     if ($preview) {
         my $output = $parser->($preview);
 
-        my $url = Bootylicious::Url->new;
+        my $url = Bootylicious::UrlBuilder->new;
         $url = $url->article_more($article);
 
         $output .= qq{<a href="$url" class="more">$preview_link</a>};
