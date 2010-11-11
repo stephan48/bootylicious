@@ -154,7 +154,7 @@ __DATA__
 
 @@ layouts/wrapper.html.ep
 <!DOCTYPE html>
-<html dir="ltr" lang="ru-RU">
+<html dir="ltr">
 <head>
 <meta charset="UTF-8" />
 <title><%= config 'title' %></title>
