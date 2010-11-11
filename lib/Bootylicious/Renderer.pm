@@ -42,6 +42,8 @@ sub new {
 sub config  { shift->{config} }
 sub parsers { shift->{parsers} }
 
+sub formats { keys %{shift->parsers} }
+
 sub render_preview {
     my $self    = shift;
     my $article = shift;
