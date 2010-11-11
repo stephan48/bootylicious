@@ -268,22 +268,22 @@ __DATA__
 
 
 @@ comments.rss.ep
-    % my $comments = get_recent_comments(10);
+    % my $comments = booty->get_recent_comments(10);
     <channel>
         <title><%= booty->config->title %></title>
-        <link><%= href_to_comments_rss->to_abs %></link>
+        <link><%= booty->url->comments_rss %></link>
         <description><%= booty->config->description %></description>
         <pubDate><%= $comments->first->created->to_string %></pubDate>
         <generator><%= booty->helpers->generator %></generator>
         % while (my $comment = $comments->next) {
         <item>
           <title><%= $comment->author %> on <%= $comment->article->title %></title>
-          <link><%= href_to_comment($comment)->to_abs %></link>
+          <link><%= booty->url->comment($comment)->to_abs %></link>
           <description><![CDATA[
             <%= $comment->content %>
           ]]></description>
           <pubDate><%= $comment->created->to_string %></pubDate>
-          <guid><%= href_to_comment($comment)->to_abs %></guid>
+          <guid><%= booty->url->comment($comment)->to_abs %></guid>
         </item>
         % }
     </channel>

@@ -87,9 +87,9 @@ sub comment {
     my $self    = shift;
     my $comment = shift;
 
-    return $self->build('articles', $comment->article->year,
-        $comment->article->month,
-        $comment->article->name . '#' . $comment->count);
+    return $self->build('articles', $comment->article->created->year,
+        $comment->article->created->month,
+        $comment->article->name . '#' . $comment->number);
 }
 
 sub comments {
