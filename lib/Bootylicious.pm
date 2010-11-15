@@ -57,9 +57,20 @@ sub helpers  { shift->{helpers} }
 sub url      { shift->{url} }
 sub renderer { shift->{renderer} }
 
-sub articles_root { File::Spec->catfile(shift->root, 'articles') }
-sub drafts_root   { File::Spec->catfile(shift->root, 'drafts') }
-sub pages_root    { File::Spec->catfile(shift->root, 'pages') }
+sub articles_root {
+    my $self = shift;
+    File::Spec->catfile($self->root, $self->config->{articles_directory});
+}
+
+sub drafts_root {
+    my $self = shift;
+    File::Spec->catfile($self->root, $self->config->{drafts_directory});
+}
+
+sub pages_root {
+    my $self = shift;
+    File::Spec->catfile($self->root, $self->config->{pages_directory});
+}
 
 sub pagelimit { shift->config->{pagelimit} }
 
