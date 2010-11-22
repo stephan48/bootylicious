@@ -2,10 +2,17 @@ package Bootylicious::Admin;
 
 use Mojolicious::Lite;
 
+use Bootylicious;
+
 push @{app->plugins->namespaces}, 'Bootylicious::Plugin';
 
-plugin 'booty_config';
-plugin 'model';
+my $config = app->plugin(
+    'json_config' => {file => app->home->rel_file('bootylicious.conf')});
+
+my $booty =
+  Bootylicious->new(root => app->home->to_string, config => $config);
+
+plugin 'booty_config' => {%$config, booty => $booty};
 
 app->helper(is_logged_in => sub { shift->session->{admin} ? 1 : 0 });
 app->helper(logout => sub { shift->session(admin => 0, expires => 1) });
@@ -16,7 +23,7 @@ get '/' => sub {
     return $self->redirect_to('login') unless $self->is_logged_in;
 } => 'index';
 
-get '/create_article' => sub {
+any '/create_article' => sub {
     my $self = shift;
 
     return unless $self->req->method eq 'POST';
@@ -24,7 +31,7 @@ get '/create_article' => sub {
     my $validator = $self->create_validator;
 
     $validator->field('name')->required(1)->regexp(qr/^[a-z0-9-]+$/);
-    $validator->field('format')->required(1)->in(keys %{$self->parsers});
+    $validator->field('format')->required(1)->in([$booty->renderer->formats]);
     $validator->field('title')->required(1);
     $validator->field('tags');
     $validator->field('content')->required(1);
@@ -33,16 +40,16 @@ get '/create_article' => sub {
 
     return unless $self->validate($validator);
 
-    Bootylicious::Article->new->create($self->articles_root,
+    Bootylicious::Article->new->create($booty->articles_root,
         $validator->values);
 
-    return $self->redirect_to('admin');
+    return $self->redirect_to('index');
 } => 'create-article';
 
-get '/:year/:month/:name' => sub {
+any '/:year/:month/:name' => sub {
     my $self = shift;
 
-    my $article = $self->get_article(@{$self->stash}{qw/year month name/});
+    my $article = $booty->get_article(@{$self->stash}{qw/year month name/});
 
     return $self->render_not_found unless $article;
 
@@ -62,7 +69,7 @@ get '/:year/:month/:name' => sub {
 
     $article->update($validator->values);
 
-    return $self->redirect_to('admin');
+    return $self->redirect_to('index');
 } => 'article';
 
 any [qw/get post/] => '/login' => sub {
@@ -107,7 +114,8 @@ get '/logout' => sub {
 __DATA__
 
 @@ index.html.ep
-% my $pager = get_articles;
+% my $pager = booty->get_articles;
+%# <%= link_to 'Create Article', 'create-article' %><br / >
 % while (my $article = $pager->articles->next) {
     <%= link_to $article->title, 'article' => {year => $article->created->year, month => $article->created->month, name => $article->name} %><br />
 % }
@@ -124,31 +132,31 @@ __DATA__
 
 @@ create-article.html.ep
 %= signed_form_for 'current', method => 'post' => begin
-    <label for 'name'>Permalink</label><br />
+    <label for='name'>Permalink</label><br />
     <%= input_tag 'name' %><br />
     <%= validator_error 'name' %>
 
-    <label for 'title'>Title</label><br />
+    <label for='title'>Title</label><br />
     <%= input_tag 'title' %><br />
     <%= validator_error 'title' %>
 
-    <label for 'tags'>Tags</label><br />
+    <label for='tags'>Tags</label><br />
     <%= input_tag 'tags' %><br />
     <%= validator_error 'tags' %>
 
-    <label for 'format'>Format</label><br />
-    <%= select_field 'format' => [keys %{parsers()}] %><br />
+    <label for='format'>Format</label><br />
+    <%= select_field 'format' => [booty->renderer->formats] %><br />
     <%= validator_error 'format' %>
 
-    <label for 'content'>Content</label><br />
+    <label for='content'>Content</label><br />
     <%= text_area 'content' => begin %><% end %><br />
     <%= validator_error 'content' %>
 
-    <label for 'author'>Author</label><br />
-    <%= input_tag 'author', value => config 'author' %><br />
+    <label for='author'>Author</label><br />
+    <%= input_tag 'author', value => booty->config->author %><br />
     <%= validator_error 'author' %>
 
-    <label for 'link'>Link</label><br />
+    <label for='link'>Link</label><br />
     <%= input_tag 'link' %><br />
     <%= validator_error 'link' %>
 
@@ -158,23 +166,23 @@ __DATA__
 
 @@ article.html.ep
 %= signed_form_for 'current', method => 'post' => begin
-    <label for 'title'>Title</label><br />
+    <label for='title'>Title</label><br />
     <%= input_tag 'title', value => $article->title %><br />
     <%= validator_error 'title' %>
 
-    <label for 'tags'>Tags</label><br />
+    <label for='tags'>Tags</label><br />
     <%= input_tag 'tags', value => join ', ' => @{$article->tags} %><br />
     <%= validator_error 'tags' %>
 
-    <label for 'content'>Content</label><br />
+    <label for='content'>Content</label><br />
     <%= text_area 'content' => begin %><%= $article->content %><% end %><br />
     <%= validator_error 'content' %>
 
-    <label for 'author'>Author</label><br />
+    <label for='author'>Author</label><br />
     <%= input_tag 'author', value => $article->author %><br />
     <%= validator_error 'author' %>
 
-    <label for 'link'>Link</label><br />
+    <label for='link'>Link</label><br />
     <%= input_tag 'link', value => $article->link %><br />
     <%= validator_error 'link' %>
 

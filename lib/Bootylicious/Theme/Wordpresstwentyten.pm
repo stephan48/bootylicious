@@ -154,7 +154,7 @@ __DATA__
 
 @@ layouts/wrapper.html.ep
 <!DOCTYPE html>
-<html dir="ltr" lang="ru-RU">
+<html dir="ltr">
 <head>
 <meta charset="UTF-8" />
 <title><%= config 'title' %></title>
@@ -202,7 +202,7 @@ __DATA__
 
                     <%= form_for 'search', method => 'get', id => 'searchform' => begin %>
                     <div><label class="screen-reader-text" for="s">Find:</label>
-                        <%= input 'q', id => 's' %>
+                        <%= input_tag 'q', id => 's' %>
                         <%= submit_button 'Search', id => 'searchsubmit' %>
                     </div>
                     <% end %>
